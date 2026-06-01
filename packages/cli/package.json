@@ -1,20 +1,39 @@
 {
-  "name": "@llm-usage-tracker/cli",
-  "version": "1.0.0",
-  "description": "CLI for LLM Usage Tracker",
-  "bin": {
-    "lut": "dist/cli.js"
+  "name": "llm-usage-tracker",
+  "version": "1.0.1",
+  "description": "CLI for LLM Usage Tracker - automatically intercepts and records all LLM API requests.",
+  "author": "orzroa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orzroa/llm-usage-tracker.git"
   },
+  "keywords": [
+    "llm",
+    "api",
+    "usage",
+    "tracking",
+    "statistics",
+    "proxy"
+  ],
+  "bin": {
+    "lut": "dist/cli.js",
+    "llm-usage-tracker": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
     "dev": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@llm-usage-tracker/core": "workspace:*",
-    "@llm-usage-tracker/server": "workspace:*",
     "minimist": "^1.2.8"
   },
   "devDependencies": {
+    "@llm-usage-tracker/core": "workspace:*",
+    "@llm-usage-tracker/server": "workspace:*",
     "@types/node": "^24.0.15",
     "esbuild": "^0.25.1",
     "tsx": "^4.20.3",
