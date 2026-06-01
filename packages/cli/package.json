@@ -1,0 +1,23 @@
+{
+  "name": "@llm-usage-tracker/cli",
+  "version": "1.0.0",
+  "description": "CLI for LLM Usage Tracker",
+  "bin": {
+    "lut": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
+    "dev": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@llm-usage-tracker/core": "workspace:*",
+    "@llm-usage-tracker/server": "workspace:*",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.15",
+    "esbuild": "^0.25.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "llm-usage-tracker",
+  "version": "1.0.0",
+  "description": "LLM API traffic recorder and statistics dashboard",
+  "private": true,
+  "scripts": {
+    "build": "pnpm build:core && pnpm build:server && pnpm build:ui && pnpm build:cli",
+    "build:core": "pnpm --filter @llm-usage-tracker/core build",
+    "build:server": "pnpm --filter @llm-usage-tracker/server build",
+    "build:ui": "pnpm --filter @llm-usage-tracker/ui build",
+    "build:cli": "pnpm --filter @llm-usage-tracker/cli build",
+    "dev": "pnpm dev:server",
+    "dev:server": "pnpm --filter @llm-usage-tracker/server dev",
+    "dev:ui": "pnpm --filter @llm-usage-tracker/ui dev"
+  },
+  "keywords": [
+    "llm",
+    "api",
+    "usage",
+    "tracking",
+    "statistics",
+    "proxy"
+  ],
+  "author": "orzroa",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

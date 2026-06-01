@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  /* Pale paper theme - Neutral warm off-white, no pink, no green */
+  --color-slate-950: #f4f2ec;
+  --color-slate-900: #fdfbf7; /* Pure neutral paper background */
+  --color-slate-800: #efede6; /* Slightly darker for cards/hover */
+  --color-slate-700: #e2ded5; /* Borders */
+  --color-slate-600: #93a1a1;
+  --color-slate-500: #839496; /* Muted text */
+  --color-slate-400: #586e75; /* Normal text */
+  --color-slate-300: #073642; /* Dark text */
+  --color-slate-200: #002b36; /* Darkest text */
+  
+  --color-white: #000000; /* Invert white to black for borders/highlights */
+
+  --color-background: var(--color-slate-900);
+  --color-foreground: var(--color-slate-200);
+  --color-muted: var(--color-slate-800);
+  --color-muted-foreground: var(--color-slate-500);
+  --color-border: var(--color-slate-700);
+  --color-card: var(--color-slate-900);
+  --color-card-foreground: var(--color-slate-200);
+  --color-primary: #0ea5e9;
+  --color-primary-foreground: #ffffff;
+
+  /* Darken neon colors for readability on light background */
+  --color-emerald-400: #059669;
+  --color-cyan-400: #0891b2;
+  --color-cyan-500: #0e7490;
+  --color-fuchsia-400: #c026d3;
+  --color-fuchsia-500: #a21caf;
+  --color-blue-400: #2563eb;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass-panel {
+  background: rgba(253, 251, 247, 0.8); /* Match pale paper #fdfbf7 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.neon-glow {
+  box-shadow: 0 0 15px rgba(8, 145, 178, 0.1);
+}
+
+.neon-text {
+  text-shadow: none; /* Disable neon text in light mode */
+}

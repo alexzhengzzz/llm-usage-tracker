@@ -1,0 +1,6 @@
+{
+  "port": 3457,
+  "host": "127.0.0.1",
+  "target": "https://api.openai.com/v1",
+  "apiKey": "sk-your-api-key-here"
+}
