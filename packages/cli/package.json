@@ -1,6 +1,6 @@
 {
   "name": "llm-usage-tracker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CLI for LLM Usage Tracker - automatically intercepts and records all LLM API requests.",
   "author": "orzroa",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
+    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && mkdir -p dist/ui && cp ../ui/dist/index.html dist/ui/",
     "dev": "tsx src/cli.ts"
   },
   "dependencies": {

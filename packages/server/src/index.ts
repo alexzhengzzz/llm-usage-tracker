@@ -6,6 +6,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import staticPlugin from '@fastify/static';
 import path from 'node:path';
+import fs from 'node:fs';
 import { config } from 'dotenv';
 import { Storage, Aggregator, LogReader } from '@llm-usage-tracker/core';
 import { createRoutes } from './routes';
@@ -62,8 +63,22 @@ export async function createServer(serverConfig: ServerConfig = {}) {
   }
 
   // Serve static UI files (if built)
-  const uiDistPath = path.join(__dirname, '..', '..', 'ui', 'dist');
-  if (path.resolve(uiDistPath) !== path.resolve(__dirname)) {
+  // Try multiple paths to find UI dist (works for both development and bundled CLI)
+  const possibleUiPaths = [
+    path.join(__dirname, '..', '..', 'ui', 'dist'),  // Development: packages/server/dist -> packages/ui/dist
+    path.join(__dirname, 'ui'),                      // Bundled: dist/cli.js -> dist/ui (if bundled together)
+    path.resolve(__dirname, '..', 'ui', 'dist'),     // Alternative relative path
+  ];
+
+  let uiDistPath: string | null = null;
+  for (const p of possibleUiPaths) {
+    if (fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html'))) {
+      uiDistPath = p;
+      break;
+    }
+  }
+
+  if (uiDistPath && path.resolve(uiDistPath) !== path.resolve(__dirname)) {
     try {
       await fastify.register(staticPlugin, {
         root: uiDistPath,
@@ -71,8 +86,10 @@ export async function createServer(serverConfig: ServerConfig = {}) {
       });
       fastify.log.info(`UI static files served from ${uiDistPath}`);
     } catch (e) {
-      fastify.log.warn('UI dist not found, skipping static file serving');
+      fastify.log.warn('UI dist registration failed, skipping static file serving');
     }
+  } else {
+    fastify.log.warn('UI dist not found, skipping static file serving');
   }
 
   return fastify;
