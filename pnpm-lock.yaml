@@ -6,20 +6,27 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      '@types/minimist':
+        specifier: ^1.2.5
+        version: 1.2.5
 
   packages/cli:
     dependencies:
+      minimist:
+        specifier: ^1.2.8
+        version: 1.2.8
+    devDependencies:
       '@llm-usage-tracker/core':
         specifier: workspace:*
         version: link:../core
       '@llm-usage-tracker/server':
         specifier: workspace:*
         version: link:../server
-      minimist:
-        specifier: ^1.2.8
-        version: 1.2.8
-    devDependencies:
+      '@types/minimist':
+        specifier: ^1.2.5
+        version: 1.2.5
       '@types/node':
         specifier: ^24.0.15
         version: 24.12.4
@@ -1484,6 +1491,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/minimist@1.2.5':
+    resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
 
   '@types/node@24.12.4':
     resolution: {integrity: sha512-GUUEShf+PBCGW2KaXwcIt3Yk+e3pkKwWKb9GSyM9WQVE+ep2jzmHdGsHzu4wgcZy5fN9FBdVzjpBQsYlpfpgLA==}
@@ -3398,6 +3408,8 @@ snapshots:
   '@types/d3-timer@3.0.2': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/minimist@1.2.5': {}
 
   '@types/node@24.12.4':
     dependencies:

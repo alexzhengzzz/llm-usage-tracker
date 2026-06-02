@@ -1,6 +1,6 @@
 {
   "name": "llm-usage-tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI for LLM Usage Tracker - automatically intercepts and records all LLM API requests.",
   "author": "orzroa",
   "license": "MIT",
@@ -34,6 +34,7 @@
   "devDependencies": {
     "@llm-usage-tracker/core": "workspace:*",
     "@llm-usage-tracker/server": "workspace:*",
+    "@types/minimist": "^1.2.5",
     "@types/node": "^24.0.15",
     "esbuild": "^0.25.1",
     "tsx": "^4.20.3",
