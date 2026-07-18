@@ -138,6 +138,33 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
       let errorMessage: string | undefined;
       let responseModel: string | undefined;
       let responseText = '';
+      let timeToFirstToken: number | undefined;
+
+      // Record TTFT once the upstream starts sending generated output. A role-only
+      // OpenAI delta is metadata rather than a token, so it is deliberately ignored.
+      const markFirstToken = (data: any) => {
+        if (timeToFirstToken !== undefined) return;
+
+        const isAnthropicContentEvent =
+          data.type === 'content_block_start' ||
+          data.type === 'content_block_delta';
+        const hasOpenAIOutputDelta = Array.isArray(data.choices) && data.choices.some((choice: any) => {
+          const delta = choice?.delta;
+          return delta && (
+            (typeof delta.content === 'string' && delta.content.length > 0) ||
+            (typeof delta.reasoning === 'string' && delta.reasoning.length > 0) ||
+            (typeof delta.reasoning_content === 'string' && delta.reasoning_content.length > 0) ||
+            (typeof delta.refusal === 'string' && delta.refusal.length > 0) ||
+            delta.tool_calls !== undefined ||
+            delta.function_call !== undefined ||
+            delta.audio !== undefined
+          );
+        });
+
+        if (isAnthropicContentEvent || hasOpenAIOutputDelta) {
+          timeToFirstToken = Date.now() - (request as any).startTime;
+        }
+      };
 
       // Transform stream to intercept chunks and extract usage without consuming the stream
       const monitorStream = new Transform({
@@ -156,6 +183,8 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
                 if (dataStr !== '[DONE]') {
                   try {
                     const data = JSON.parse(dataStr);
+
+                    markFirstToken(data);
                     
                     if (data.model) {
                       responseModel = data.model;
@@ -287,7 +316,8 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
             stream: (request.body as any)?.stream || false,
             success,
             errorMessage,
-            duration
+            duration,
+            timeToFirstToken
           });
 
           callback();

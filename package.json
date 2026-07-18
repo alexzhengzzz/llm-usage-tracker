@@ -8,7 +8,7 @@
     "build:core": "pnpm --filter @llm-usage-tracker/core build",
     "build:server": "pnpm --filter @llm-usage-tracker/server build",
     "build:ui": "pnpm --filter @llm-usage-tracker/ui build",
-    "build:cli": "pnpm --filter @llm-usage-tracker/cli build",
+    "build:cli": "pnpm --dir packages/cli build",
     "dev": "pnpm dev:server",
     "dev:server": "pnpm --filter @llm-usage-tracker/server dev",
     "dev:ui": "pnpm --filter @llm-usage-tracker/ui dev"
