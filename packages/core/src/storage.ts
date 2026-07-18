@@ -118,6 +118,38 @@ export class Storage {
     return fullRecord;
   }
 
+  /** Remove records imported from a named source without affecting proxy usage. */
+  deleteByRequestIdPrefix(prefix: string): number {
+    this.ensureDir();
+    let deletedCount = 0;
+
+    for (const filename of fs.readdirSync(this.usageDir).filter(name => DAILY_FILE_PATTERN.test(name))) {
+      const filePath = path.join(this.usageDir, filename);
+      const release = lockfile.lockSync(filePath, { stale: 5000 });
+      try {
+        const lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+        const remaining = lines.filter(line => {
+          if (!line.trim()) return false;
+          try {
+            const record = JSON.parse(line) as UsageRecord;
+            if (record.requestId.startsWith(prefix)) {
+              deletedCount++;
+              return false;
+            }
+          } catch {
+            // Preserve malformed lines instead of silently losing user data.
+          }
+          return true;
+        });
+        fs.writeFileSync(filePath, remaining.length ? `${remaining.join('\n')}\n` : '', 'utf-8');
+      } finally {
+        release();
+      }
+    }
+
+    return deletedCount;
+  }
+
   /**
    * List all daily files
    */

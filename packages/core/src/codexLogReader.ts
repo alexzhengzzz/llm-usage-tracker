@@ -13,6 +13,7 @@ import type { TrackerConfig } from './types';
 import { getLocalDate } from './utils';
 
 interface ImportState {
+  version?: number;
   files: Record<string, number>;
 }
 
@@ -21,7 +22,10 @@ interface SessionContext {
   model: string;
   requestStart?: number;
   firstResponse?: number;
+  nextRequestStart?: number;
 }
+
+const IMPORT_STATE_VERSION = 2;
 
 const DEFAULT_CODEX_SESSIONS_DIR = path.join(
   process.env.CODEX_HOME || path.join(os.homedir(), '.codex'),
@@ -61,6 +65,11 @@ export class CodexLogReader {
     if (!fs.existsSync(this.sessionsDir)) return 0;
 
     const state = this.readState();
+    if (state.version !== IMPORT_STATE_VERSION) {
+      this.storage.deleteByRequestIdPrefix('codex:');
+      state.version = IMPORT_STATE_VERSION;
+      state.files = {};
+    }
     let imported = 0;
     for (const filePath of this.findSessionFiles(this.sessionsDir)) {
       imported += this.importFile(filePath, state);
@@ -139,6 +148,12 @@ export class CodexLogReader {
     if (entry.type === 'event_msg' && payload.type === 'user_message') {
       context.requestStart = timestamp;
       context.firstResponse = undefined;
+      context.nextRequestStart = undefined;
+      return 0;
+    }
+
+    if (entry.type === 'event_msg' && payload.type === 'agent_message') {
+      if (context.requestStart && !context.firstResponse) context.firstResponse = timestamp;
       return 0;
     }
 
@@ -149,8 +164,9 @@ export class CodexLogReader {
       }
       // A tool result is the best available start marker for Codex's next model call.
       if (payload.type === 'function_call_output' || payload.type === 'custom_tool_call_output') {
-        context.requestStart = timestamp;
-        context.firstResponse = undefined;
+        // Codex writes the token_count for the current response after its tool
+        // output. Defer this start marker until that current usage is persisted.
+        context.nextRequestStart = timestamp;
       }
       return 0;
     }
@@ -178,8 +194,9 @@ export class CodexLogReader {
       timeToFirstToken: firstResponse ? Math.max(0, firstResponse - requestStart) : undefined,
     });
 
-    context.requestStart = undefined;
+    context.requestStart = context.nextRequestStart;
     context.firstResponse = undefined;
+    context.nextRequestStart = undefined;
     return 1;
   }
 
