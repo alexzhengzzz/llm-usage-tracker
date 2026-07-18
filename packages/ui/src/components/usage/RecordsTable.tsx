@@ -111,12 +111,16 @@ export function RecordsTable({
               <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.reasoning')}</th>
               <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.output_tokens')}</th>
               <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.consumed_tokens')}</th>
-              <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.ttft')}</th>
-              <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.output_duration')}</th>
+              <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" title={t('usage.codex_metric_hint')}>
+                <span className="cursor-help border-b border-dotted border-slate-500">{t('usage.ttft')}</span>
+              </th>
+              <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" title={t('usage.codex_metric_hint')}>
+                <span className="cursor-help border-b border-dotted border-slate-500">{t('usage.output_duration')}</span>
+              </th>
               <th className="py-3 px-2 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <div className="flex items-center gap-1 justify-end">
+                <div className="flex items-center gap-1 justify-end" title={t('usage.codex_metric_hint')}>
                   <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  {t('usage.speed')}
+                  <span className="cursor-help border-b border-dotted border-slate-500">{t('usage.speed')}</span>
                 </div>
               </th>
               <th className="py-3 px-2 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('usage.status')}</th>

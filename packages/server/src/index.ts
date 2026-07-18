@@ -61,6 +61,7 @@ export async function createServer(serverConfig: ServerConfig = {}) {
     storage,
     aggregator,
     logReader,
+    codexLogReader,
     apiKey: serverConfig.apiKey
   });
 

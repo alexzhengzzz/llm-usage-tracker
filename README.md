@@ -8,7 +8,7 @@
 
 - **流量记录**: 自动拦截并记录所有的 LLM API 请求（支持流式响应与完整上下文抓取）
 - **使用量统计**: 全面的可视化仪表盘，展示 Token 消耗、延迟和性能数据
-- **Codex 用量导入**: 自动读取本机 Codex IDE/CLI 会话日志，统计输入、缓存、输出与推理 Token
+- **Codex 用量导入**: 自动读取本机 Codex IDE/CLI 会话日志，按任务回合统计输入、缓存、输出与推理 Token，并可查看原始提示词
 - **透明代理**: 轻松转发请求到任何支持 OpenAI 格式的后端或路由层（如 Claude Code Router）
 - **动态厂商映射**: 独创读时转换引擎，支持通过 `providers.json` 热重载厂商归属，或使用 OpenRouter 风格前缀（如 `aliyun/glm-5`）强制路由
 - **REST API**: 提供完整的聚合查询接口
@@ -70,7 +70,15 @@ lut stats --days 30
 - `providers.json` - 厂商到模型的映射配置文件（修改即时生效，影响所有历史数据呈现）
 - `codex-import-state.json` - Codex 会话日志导入游标，防止服务重启时重复统计
 
-默认会读取 `~/.codex/sessions/` 中的 Codex 会话。若使用自定义 `CODEX_HOME`，可在 `config.json` 中设置 `codexSessionsDir`。Codex 日志中的首响应时间为近似值，不是网络级 TTFT。
+默认会读取 `~/.codex/sessions/` 中的 Codex 会话。若使用自定义 `CODEX_HOME`，可在 `config.json` 中设置 `codexSessionsDir`。
+
+### Codex 本地日志导入
+
+- 服务启动时同步一次，之后每 5 秒增量扫描一次会话 JSONL；`codex-import-state.json` 保存每个文件的已处理行数，避免重复统计。
+- 一条记录对应一个已完成的 Codex 任务回合（`turn_id` / `task_complete`），内部模型调用与工具过程的 Token 会合并到该任务中。
+- 点击 Codex 记录可查看该回合的用户提示词。提示词始终留在 `~/.codex/sessions/` 原始日志中，仅在打开详情时本机按需读取，不复制到 `usage/`，也不会经代理上传。
+- TTFT 与总时长来自 Codex 的任务级事件；任务时长可能包含推理、工具执行和用户等待。因此 Codex 场景下的“输出时长”和“速度”不能视为网络级 TTFT 或模型原始 token/s，界面字段已提供提示说明。
+- `codex-auto-review` 是 Codex 内部只读 guardian 审查子代理产生的用量，可在模型筛选中单独查看或排除。
 
 ---
 
@@ -83,7 +91,7 @@ A standalone proxy service and dashboard for tracking, logging, and analyzing LL
 
 - **Traffic Recording**: Automatically intercepts and records all LLM API requests (supports streaming and full payload capture).
 - **Usage Statistics**: Comprehensive dashboard showing token usage, latency, cache hits, and performance.
-- **Codex Usage Import**: Reads local Codex IDE/CLI session logs for input, cached-input, output, and reasoning token usage.
+- **Codex Usage Import**: Reads local Codex IDE/CLI session logs, aggregates usage by completed task turn, and can show the original user prompt.
 - **Transparent Proxy**: Forwards requests to any OpenAI-compatible API endpoint or router (e.g., Claude Code Router).
 - **Dynamic Provider Mapping**: Read-time conversion engine powered by `providers.json` for hot-reloading provider assignments, plus OpenRouter-style explicit routing (`provider/model`).
 - **REST API**: Full API for querying and aggregating usage data.
@@ -147,6 +155,16 @@ Data is stored in `~/.llm-usage-tracker/`:
 - `usage/` - Daily JSONL log files
 - `config.json` - Global server configuration (persist `target` upstream and `apiKey` without passing them via CLI)
 - `providers.json` - Provider configuration mapping (Hot-reloaded, applies retroactively to all history)
+
+By default, Codex sessions are read from `~/.codex/sessions/`. Set `codexSessionsDir` in `config.json` when using a custom `CODEX_HOME`.
+
+### Codex Local Session Import
+
+- Sessions are synchronized at startup and scanned incrementally every five seconds. `codex-import-state.json` stores the processed line cursor for each JSONL file.
+- One record represents one completed Codex task turn (`turn_id` / `task_complete`); usage from internal model and tool steps is aggregated into that task.
+- Opening a Codex record displays its user prompt on demand from the original local session file. Prompts are not copied into `usage/` and are never sent through the proxy.
+- TTFT and duration are task-level Codex events. Duration can include reasoning, tool execution, and user wait time, so Codex output duration and speed are not a network-level TTFT or raw model token/s measurement.
+- `codex-auto-review` is usage produced by Codex's internal read-only guardian review subagent and can be filtered separately by model.
 
 ## License
 

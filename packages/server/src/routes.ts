@@ -3,7 +3,7 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify';
-import type { Storage, Aggregator, LogReader } from '@llm-usage-tracker/core';
+import type { Storage, Aggregator, LogReader, CodexLogReader } from '@llm-usage-tracker/core';
 import type { UsageQuery, CleanupOptions } from '@llm-usage-tracker/core';
 import { getLocalDate } from '@llm-usage-tracker/core';
 
@@ -11,11 +11,12 @@ interface RoutesOptions {
   storage: Storage;
   aggregator: Aggregator;
   logReader: LogReader;
+  codexLogReader: CodexLogReader;
   apiKey?: string;
 }
 
 export const createRoutes: FastifyPluginAsync<RoutesOptions> = async (fastify, options) => {
-  const { storage, aggregator, logReader, apiKey } = options;
+  const { storage, aggregator, logReader, codexLogReader, apiKey } = options;
 
   // No authentication needed for UI API routes (the proxy handles its own auth)
 
@@ -118,7 +119,9 @@ export const createRoutes: FastifyPluginAsync<RoutesOptions> = async (fastify, o
       if (!requestId) {
         return { error: 'requestId required' };
       }
-      const result = await logReader.searchRequestBodyFromLogs(requestId);
+      const result = requestId.startsWith('codex:')
+        ? codexLogReader.searchPromptByRequestId(requestId)
+        : await logReader.searchRequestBodyFromLogs(requestId);
       return result || { error: 'Not found', requestId };
     });
 
