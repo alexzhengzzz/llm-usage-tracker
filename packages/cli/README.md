@@ -8,6 +8,7 @@
 
 - **流量记录**: 自动拦截并记录所有的 LLM API 请求（支持流式响应与完整上下文抓取）
 - **使用量统计**: 全面的可视化仪表盘，展示 Token 消耗、延迟和性能数据
+- **Codex 用量导入**: 自动读取本机 Codex IDE/CLI 会话日志，统计 Token 与近似首响应延迟
 - **透明代理**: 轻松转发请求到任何支持 OpenAI 格式的后端或路由层（如 Claude Code Router）
 - **动态厂商映射**: 独创读时转换引擎，支持通过 `providers.json` 热重载厂商归属，或使用 OpenRouter 风格前缀（如 `aliyun/glm-5`）强制路由
 - **REST API**: 提供完整的聚合查询接口
@@ -79,6 +80,7 @@ A standalone proxy service and dashboard for tracking, logging, and analyzing LL
 
 - **Traffic Recording**: Automatically intercepts and records all LLM API requests (supports streaming and full payload capture).
 - **Usage Statistics**: Comprehensive dashboard showing token usage, latency, cache hits, and performance.
+- **Codex Usage Import**: Reads local Codex IDE/CLI session logs for token usage and approximate first-response latency.
 - **Transparent Proxy**: Forwards requests to any OpenAI-compatible API endpoint or router (e.g., Claude Code Router).
 - **Dynamic Provider Mapping**: Read-time conversion engine powered by `providers.json` for hot-reloading provider assignments, plus OpenRouter-style explicit routing (`provider/model`).
 - **REST API**: Full API for querying and aggregating usage data.

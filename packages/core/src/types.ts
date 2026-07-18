@@ -202,6 +202,7 @@ export interface CleanupResult {
 export interface TrackerConfig {
   storageDir?: string;
   logsDir?: string;
+  codexSessionsDir?: string;
   retentionDays?: number;
 }
 

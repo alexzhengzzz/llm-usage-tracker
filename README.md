@@ -8,6 +8,7 @@
 
 - **流量记录**: 自动拦截并记录所有的 LLM API 请求（支持流式响应与完整上下文抓取）
 - **使用量统计**: 全面的可视化仪表盘，展示 Token 消耗、延迟和性能数据
+- **Codex 用量导入**: 自动读取本机 Codex IDE/CLI 会话日志，统计输入、缓存、输出与推理 Token
 - **透明代理**: 轻松转发请求到任何支持 OpenAI 格式的后端或路由层（如 Claude Code Router）
 - **动态厂商映射**: 独创读时转换引擎，支持通过 `providers.json` 热重载厂商归属，或使用 OpenRouter 风格前缀（如 `aliyun/glm-5`）强制路由
 - **REST API**: 提供完整的聚合查询接口
@@ -67,6 +68,9 @@ lut stats --days 30
 - `usage/` - 每日生成的 JSONL 请求日志文件
 - `config.json` - 全局服务配置文件。您可以将项目根目录的 `config.example.json` 复制为 `~/.llm-usage-tracker/config.json`，在其中填写全局的上游 LLM 地址 (`target`) 和 API 密钥 (`apiKey`)，这样启动时就无需每次输入长命令。
 - `providers.json` - 厂商到模型的映射配置文件（修改即时生效，影响所有历史数据呈现）
+- `codex-import-state.json` - Codex 会话日志导入游标，防止服务重启时重复统计
+
+默认会读取 `~/.codex/sessions/` 中的 Codex 会话。若使用自定义 `CODEX_HOME`，可在 `config.json` 中设置 `codexSessionsDir`。Codex 日志中的首响应时间为近似值，不是网络级 TTFT。
 
 ---
 
@@ -79,6 +83,7 @@ A standalone proxy service and dashboard for tracking, logging, and analyzing LL
 
 - **Traffic Recording**: Automatically intercepts and records all LLM API requests (supports streaming and full payload capture).
 - **Usage Statistics**: Comprehensive dashboard showing token usage, latency, cache hits, and performance.
+- **Codex Usage Import**: Reads local Codex IDE/CLI session logs for input, cached-input, output, and reasoning token usage.
 - **Transparent Proxy**: Forwards requests to any OpenAI-compatible API endpoint or router (e.g., Claude Code Router).
 - **Dynamic Provider Mapping**: Read-time conversion engine powered by `providers.json` for hot-reloading provider assignments, plus OpenRouter-style explicit routing (`provider/model`).
 - **REST API**: Full API for querying and aggregating usage data.

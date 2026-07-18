@@ -14,5 +14,8 @@ export { Aggregator, defaultAggregator, aggregate, getTodaySummary, getAvailable
 // Export log reader
 export { LogReader, defaultLogReader, searchRequestBodyFromLogs } from './logReader';
 
+// Export Codex session usage reader
+export { CodexLogReader } from './codexLogReader';
+
 // Export utils
 export * from './utils';

@@ -8,7 +8,7 @@ import staticPlugin from '@fastify/static';
 import path from 'node:path';
 import fs from 'node:fs';
 import { config } from 'dotenv';
-import { Storage, Aggregator, LogReader } from '@llm-usage-tracker/core';
+import { Storage, Aggregator, LogReader, CodexLogReader } from '@llm-usage-tracker/core';
 import { createRoutes } from './routes';
 import { createProxyHook } from './proxy';
 
@@ -24,6 +24,7 @@ export interface ServerConfig {
   logsDir?: string;
   proxyTarget?: string;
   apiKey?: string;
+  codexSessionsDir?: string;
 }
 
 export async function createServer(serverConfig: ServerConfig = {}) {
@@ -43,6 +44,17 @@ export async function createServer(serverConfig: ServerConfig = {}) {
   const storage = new Storage(serverConfig);
   const aggregator = new Aggregator(storage);
   const logReader = new LogReader(serverConfig);
+  const codexLogReader = new CodexLogReader(storage, serverConfig);
+
+  // Codex IDE/CLI sessions are local JSONL files, not traffic sent through this proxy.
+  // Import new usage events at startup and keep the dashboard current while running.
+  const importCodexUsage = () => {
+    const imported = codexLogReader.sync();
+    if (imported > 0) fastify.log.info({ imported }, 'Imported Codex usage records');
+  };
+  importCodexUsage();
+  const codexImportTimer = setInterval(importCodexUsage, 5000);
+  fastify.addHook('onClose', async () => clearInterval(codexImportTimer));
 
   // Register API routes
   await fastify.register(createRoutes, {

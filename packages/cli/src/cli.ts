@@ -146,6 +146,7 @@ async function startCommand() {
   const host = argv.host || fileConfig.host || '127.0.0.1';
   const target = argv.target || fileConfig.target;
   const apiKey = argv.apiKey || fileConfig.apiKey;
+  const codexSessionsDir = fileConfig.codexSessionsDir;
 
   // Check if running in foreground mode (with -f or --foreground flag)
   const foreground = argv.f || argv.foreground;
@@ -163,7 +164,8 @@ async function startCommand() {
         port,
         host,
         proxyTarget: target,
-        apiKey: apiKey
+        apiKey: apiKey,
+        codexSessionsDir
       });
       console.log('Server started successfully');
     } catch (error) {
