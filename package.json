@@ -1,5 +1,5 @@
 {
-  "name": "llm-usage-tracker",
+  "name": "llm-usage-tracker-workspace",
   "version": "1.0.0",
   "description": "LLM API traffic recorder and statistics dashboard",
   "private": true,
