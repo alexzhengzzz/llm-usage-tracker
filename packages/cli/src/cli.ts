@@ -31,6 +31,9 @@ async function main() {
     case 'stats':
       await statsCommand();
       break;
+    case 'version':
+      versionCommand();
+      break;
     case 'help':
       helpCommand();
       break;
@@ -308,6 +311,17 @@ async function statsCommand() {
   }
 }
 
+function versionCommand() {
+  try {
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    console.log(`${pkg.name} v${pkg.version}`);
+  } catch (e) {
+    console.error('Unable to read version:', (e as Error).message);
+    process.exit(1);
+  }
+}
+
 function helpCommand() {
   console.log(`
 LLM Usage Tracker CLI
@@ -320,6 +334,7 @@ Commands:
   restart   Restart the server
   status    Show server status
   stats     Show usage statistics
+  version   Print the CLI version
   help      Show this help message
 
 Options for 'start':
