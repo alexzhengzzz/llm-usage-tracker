@@ -14,6 +14,9 @@ export { Aggregator, defaultAggregator, aggregate, getTodaySummary, getAvailable
 // Export log reader
 export { LogReader, defaultLogReader, searchRequestBodyFromLogs } from './logReader';
 
+export { resolveProxiedModel } from './proxyModel';
+export type { AttributionInputs } from './proxyModel';
+
 // Export Codex session usage reader
 export { CodexLogReader } from './codexLogReader';
 

@@ -25,6 +25,7 @@ pnpm-debug.log*
 coverage/
 
 # IDE and OS files
+.claude
 .idea/
 .vscode/
 *.swp

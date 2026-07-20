@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Transform, Readable } from 'node:stream';
-import { getLocalDate, getProvidersConfig } from '@llm-usage-tracker/core';
+import { getLocalDate, getProvidersConfig, resolveProxiedModel } from '@llm-usage-tracker/core';
 
 interface ProxyConfig {
   target: string;
@@ -295,8 +295,15 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
             }
           }
 
-            const requestModelName = (request.body as any)?.model || 'unknown';
-            const finalModelName = responseModel || requestModelName;
+            const requestModelName = (request.body as any)?.model;
+            const finalModelName = resolveProxiedModel({
+              responseModel,
+              requestModel: requestModelName,
+              inputTokens,
+              outputTokens,
+              cacheCreationInputTokens: cacheCreationTokens || undefined,
+              cacheReadInputTokens: cacheReadTokens || undefined,
+            });
             
             // Log response body for UI view
             if (responseText) {
