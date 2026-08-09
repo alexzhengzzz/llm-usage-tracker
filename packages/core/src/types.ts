@@ -13,6 +13,8 @@ export interface UsageRecord {
   requestId: string;
   provider: string;
   model: string;
+  /** Optional origin marker for records imported from another tracker. */
+  source?: string;
 
   // Token usage
   inputTokens: number;

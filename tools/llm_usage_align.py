@@ -8,7 +8,6 @@ import datetime as dt
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -18,8 +17,12 @@ TRACKER_HOME = HOME / ".llm-usage-tracker"
 USAGE_DIR = TRACKER_HOME / "usage"
 STATE_PATH = TRACKER_HOME / "remote-align-state.json"
 LOCK_PATH = TRACKER_HOME / "remote-align.lock"
-REMOTE_HOSTS = ("home-local", "home")
-SOURCE = "home-local"
+REMOTE_HOSTS = tuple(
+    host.strip()
+    for host in os.environ.get("LLM_USAGE_ALIGN_HOSTS", "home-local,home").split(",")
+    if host.strip()
+)
+SOURCE = os.environ.get("LLM_USAGE_ALIGN_SOURCE", "home-local")
 
 REMOTE_CODE = r'''
 import glob, json, os, sys
@@ -33,7 +36,17 @@ for path in sorted(glob.glob(os.path.expanduser("~/.llm-usage-tracker/usage/usag
         continue
     previous = files.get(path, {})
     start = int(previous.get("line", 0))
-    if size < int(previous.get("size", 0)):
+    try:
+        stat = os.stat(path)
+    except OSError:
+        continue
+    signature = {"size": size, "mtime_ns": stat.st_mtime_ns, "inode": stat.st_ino}
+    previous_signature = previous.get("signature", {})
+    if (
+        size < int(previous.get("size", 0))
+        or previous_signature.get("inode") != signature["inode"]
+        or previous_signature.get("mtime_ns") != signature["mtime_ns"]
+    ):
         start = 0
     line_no = 0
     try:
@@ -51,12 +64,13 @@ for path in sorted(glob.glob(os.path.expanduser("~/.llm-usage-tracker/usage/usag
                 print(json.dumps({"type": "record", "path": path, "line": line_no, "record": record}, ensure_ascii=False))
     except OSError:
         continue
-    print(json.dumps({"type": "cursor", "path": path, "line": line_no, "size": size}, ensure_ascii=False))
+    print(json.dumps({"type": "cursor", "path": path, "line": line_no, "size": size, "signature": signature}, ensure_ascii=False))
 '''
 REMOTE_CODE_B64 = base64.b64encode(REMOTE_CODE.encode()).decode()
 
 
 def acquire_lock(timeout: float = 20.0):
+    TRACKER_HOME.mkdir(parents=True, exist_ok=True)
     deadline = time.time() + timeout
     while True:
         try:
@@ -104,11 +118,18 @@ def remote_records(state: dict):
         records = []
         cursors = {}
         for raw in result.stdout.splitlines():
-            item = json.loads(raw)
+            try:
+                item = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
             if item.get("type") == "record":
                 records.append(item)
             elif item.get("type") == "cursor":
-                cursors[item["path"]] = {"line": item["line"], "size": item["size"]}
+                cursors[item["path"]] = {
+                    "line": item["line"],
+                    "size": item["size"],
+                    "signature": item.get("signature", {}),
+                }
         return host, records, cursors
     raise RuntimeError(last_error or "no remote host available")
 
@@ -128,10 +149,12 @@ def record_date(record: dict) -> str:
 
 def is_ali_record(record: dict) -> bool:
     provider = str(record.get("provider", "")).lower()
-    model = str(record.get("model", "")).lower()
-    if provider in {"codex", "openai-codex", "openai", "anthropic", "minimax", "volcengine"}:
-        return False
-    return provider in {"ali", "alibaba-cn", "zhipu", "qwen", "custom"} or model.startswith(("glm-", "qwen", "deepseek"))
+    allowed_providers = {
+        item.strip().lower()
+        for item in os.environ.get("ALI_REMOTE_PROVIDERS", "ali,alibaba-cn,aliyun").split(",")
+        if item.strip()
+    }
+    return provider in allowed_providers
 
 
 def append_records(records: list[dict]):

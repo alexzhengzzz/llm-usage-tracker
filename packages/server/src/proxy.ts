@@ -6,9 +6,11 @@ import type { FastifyInstance } from 'fastify';
 import type { Storage } from '@llm-usage-tracker/core';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { Transform, Readable } from 'node:stream';
 import { getLocalDate, getProvidersConfig, resolveProxiedModel } from '@llm-usage-tracker/core';
+import { getAliQuotaConfig, isAliBreakerEnabled } from './aliQuota';
 
 interface ProxyConfig {
   target: string;
@@ -26,6 +28,8 @@ function isProxyablePath(path: string): boolean {
 
 export async function createProxyHook(fastify: FastifyInstance, config: ProxyConfig) {
   const { target, storage, apiKey, logsDir } = config;
+
+  const { limit: aliDailyLimit, threshold: aliQuotaThreshold } = getAliQuotaConfig();
 
   // Ensure logs directory exists
   const effectiveLogsDir = logsDir || path.join(process.env.HOME || process.env.USERPROFILE || '/tmp', '.llm-usage-tracker', 'logs');
@@ -65,9 +69,22 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
     (request as any).isProxied = true;
   });
 
-  // Pre-handler hook to log body after parsing
-  fastify.addHook('preHandler', async (request) => {
+  // Pre-handler hook to enforce the Ali quota and log body after parsing.
+  fastify.addHook('preHandler', async (request, reply) => {
     if (!isProxyablePath(request.url)) return;
+    const aliUsed = getTodayAliTokens();
+    if (aliUsed >= aliQuotaThreshold && isAliBreakerEnabled()) {
+      request.log.warn({ used: aliUsed, limit: aliDailyLimit, threshold: aliQuotaThreshold }, 'ALI DAILY QUOTA EXCEEDED - blocking proxy');
+      return reply.code(429).header('Retry-After', '3600').send({
+        error: {
+          message: `ali 当日 token 用量已达 ${aliUsed}（上限 ${aliDailyLimit}，熔断线 ${aliQuotaThreshold}），已暂停代理转发，模型不可用。`,
+          type: 'ali_quota_exceeded',
+          used: aliUsed,
+          limit: aliDailyLimit,
+          threshold: aliQuotaThreshold,
+        },
+      });
+    }
     if (request.body) {
       logRequestBody(request.id, request.body);
     } else {
@@ -348,6 +365,32 @@ export async function createProxyHook(fastify: FastifyInstance, config: ProxyCon
       }
     });
   }
+}
+
+function getTodayAliTokens(): number {
+  const today = getLocalDate();
+  const usageDir = path.join(process.env.HOME || process.env.USERPROFILE || os.tmpdir(), '.llm-usage-tracker', 'usage');
+  const filePath = path.join(usageDir, `usage-${today}.jsonl`);
+  let used = 0;
+
+  try {
+    if (!fs.existsSync(filePath)) return 0;
+    for (const line of fs.readFileSync(filePath, 'utf8').split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const record = JSON.parse(line);
+        if (record.provider === 'ali') {
+          used += Number(record.inputTokens) || 0;
+          used += Number(record.outputTokens) || 0;
+        }
+      } catch {
+        // Ignore a partially written or malformed line.
+      }
+    }
+  } catch {
+    return 0;
+  }
+  return used;
 }
 
 function extractProvider(target: string, model: string): string {

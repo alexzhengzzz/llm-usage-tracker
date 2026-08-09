@@ -6,6 +6,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { Storage, Aggregator, LogReader, CodexLogReader } from '@llm-usage-tracker/core';
 import type { UsageQuery, CleanupOptions } from '@llm-usage-tracker/core';
 import { getLocalDate } from '@llm-usage-tracker/core';
+import { getAliQuotaConfig, isAliBreakerEnabled, toggleAliBreaker } from './aliQuota';
 
 interface RoutesOptions {
   storage: Storage;
@@ -38,6 +39,50 @@ export const createRoutes: FastifyPluginAsync<RoutesOptions> = async (fastify, o
       const query = request.query as UsageQuery;
       return aggregator.aggregate(query);
     });
+
+    api.get('/usage/source-summary', async (request) => {
+      const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
+      const sources: Record<string, { requests: number; inputTokens: number; outputTokens: number }> = {};
+      const total = { requests: 0, inputTokens: 0, outputTokens: 0 };
+      for (const file of storage.listDailyFiles()) {
+        const fileDate = file.match(/usage-(\d{4}-\d{2}-\d{2})\.jsonl$/)?.[1];
+        if (!fileDate || (startDate && fileDate < startDate) || (endDate && fileDate > endDate)) continue;
+        for (const record of storage.readDailyFile(file)) {
+          if (record.provider !== 'ali') continue;
+          const source = record.source || 'local';
+          const bucket = sources[source] || (sources[source] = { requests: 0, inputTokens: 0, outputTokens: 0 });
+          bucket.requests++;
+          bucket.inputTokens += record.inputTokens || 0;
+          bucket.outputTokens += record.outputTokens || 0;
+          total.requests++;
+          total.inputTokens += record.inputTokens || 0;
+          total.outputTokens += record.outputTokens || 0;
+        }
+      }
+      return { total, sources };
+    });
+
+    api.get('/quota', async () => {
+      const today = getLocalDate();
+      const { limit, threshold } = getAliQuotaConfig();
+      const records = storage.query({ startDate: today, provider: 'ali' });
+      const used = records.reduce((sum, record) => sum + (record.inputTokens || 0) + (record.outputTokens || 0), 0);
+      const breaker = isAliBreakerEnabled();
+      return {
+        date: today,
+        provider: 'ali',
+        used,
+        requests: records.length,
+        limit,
+        threshold,
+        remaining: Math.max(0, limit - used),
+        percent: limit > 0 ? Math.round(used / limit * 10000) / 100 : 0,
+        breaker,
+        blocked: used >= threshold && breaker,
+      };
+    });
+
+    api.post('/quota/breaker/toggle', async () => ({ breaker: toggleAliBreaker() }));
 
     // Get daily totals
     api.get('/usage/daily', async (request) => {

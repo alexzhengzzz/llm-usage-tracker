@@ -44,6 +44,7 @@ import { PerformanceChart } from '@/components/usage/PerformanceChart';
 import { HourlyTable } from '@/components/usage/HourlyTable';
 import { RecordsTable, type UsageRecord } from '@/components/usage/RecordsTable';
 import { RequestDetailDrawer } from '@/components/usage/RequestDetailDrawer';
+import { AliQuotaCard } from '@/components/AliQuotaCard';
 
 // Types
 interface UsageSummary {
@@ -168,7 +169,7 @@ export function UsagePage() {
 
   // State
   const [startDate, setStartDate] = useState<string>('');
-  const [provider, setProvider] = useState<string>('');
+  const [provider, setProvider] = useState<string>('ali总计');
   const [model, setModel] = useState<string>('');
   const [summary, setSummary] = useState<UsageSummary | null>(null);
   const [filters, setFilters] = useState<UsageFilters | null>(null);
@@ -440,6 +441,7 @@ export function UsagePage() {
 
   return (
     <div className="h-screen bg-background text-foreground font-sans flex">
+      <AliQuotaCard />
       {/* Left Sidebar - Date History */}
       <DateSidebar
         dates={dateHistory}

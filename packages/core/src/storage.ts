@@ -25,6 +25,19 @@ const DEFAULT_STORAGE_DIR = path.join(
 // Daily file pattern: usage-YYYY-MM-DD.jsonl
 const DAILY_FILE_PATTERN = /^usage-(\d{4}-\d{2}-\d{2})\.jsonl$/;
 
+export function providerMatches(record: UsageRecord, requested?: string): boolean {
+  if (!requested) return true;
+  if (requested === 'ali总计') return record.provider === 'ali';
+  if (requested === 'ali本机') return record.provider === 'ali' && !record.source;
+  if (requested === 'ali远端') return record.provider === 'ali' && record.source === 'home-local';
+  return record.provider === requested;
+}
+
+function displayProvider(record: UsageRecord, requested?: string): string {
+  if (requested === 'ali本机' || requested === 'ali远端' || requested === 'ali总计') return requested;
+  return record.provider;
+}
+
 /**
  * Storage class for managing usage records
  */
@@ -246,7 +259,8 @@ export class Storage {
     const records: UsageRecord[] = [];
 
     for (const record of this.readDailyFile(filePath)) {
-      if (queryParams.provider && record.provider !== queryParams.provider) continue;
+      if (!providerMatches(record, queryParams.provider)) continue;
+      record.provider = displayProvider(record, queryParams.provider);
       if (queryParams.model && record.model !== queryParams.model) continue;
       records.push(record);
     }
@@ -270,7 +284,7 @@ export class Storage {
     let total = 0;
 
     for (const record of this.readDailyFile(filePath)) {
-      if (queryParams.provider && record.provider !== queryParams.provider) continue;
+      if (!providerMatches(record, queryParams.provider)) continue;
       if (queryParams.model && record.model !== queryParams.model) continue;
       total++;
     }
@@ -353,6 +367,11 @@ export class Storage {
       }
     }
 
+    if (providers.has('ali')) {
+      providers.add('ali本机');
+      providers.add('ali远端');
+      providers.add('ali总计');
+    }
     return Array.from(providers).sort();
   }
 

@@ -116,6 +116,53 @@ function accumulateDailyRecord(stats: StatsWithPerf<DailyUsageSummary>, record: 
   addRecordPerformance(stats._perf, record);
 }
 
+function makeAliAlias(provider: string, records: UsageRecord[]): ProviderStats {
+  const stats: StatsWithPerf<ProviderStats> = {
+    provider,
+    requests: 0,
+    successRequests: 0,
+    failedRequests: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheCreationTokens: 0,
+    cacheReadTokens: 0,
+    reasoningTokens: 0,
+    models: [],
+    _perf: createPerformanceAccumulator(),
+  };
+  const models = new Map<string, StatsWithPerf<ModelStats>>();
+
+  for (const record of records) {
+    accumulateRecord(stats, record);
+    const modelName = Array.isArray(record.model) ? record.model.join(',') : String(record.model);
+    let modelStats = models.get(modelName);
+    if (!modelStats) {
+      modelStats = {
+        model: record.model,
+        provider,
+        requests: 0,
+        successRequests: 0,
+        failedRequests: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheCreationTokens: 0,
+        cacheReadTokens: 0,
+        reasoningTokens: 0,
+        _perf: createPerformanceAccumulator(),
+      };
+      models.set(modelName, modelStats);
+    }
+    accumulateRecord(modelStats, record);
+  }
+
+  stats.models = Array.from(models.values()).map(model => {
+    const { _perf, ...result } = model;
+    return { ...result, ...calculatePerformance(_perf) };
+  });
+  const { _perf, ...result } = stats;
+  return { ...result, ...calculatePerformance(_perf) };
+}
+
 function createEmptyHourlyStats(): HourlyStats[] {
   return Array.from({ length: 24 }, (_, hour) => ({
     hour,
@@ -327,6 +374,20 @@ export class Aggregator {
       const { _perf, ...stats } = p;
       return { ...stats, ...perf };
     }).sort((a, b) => b.requests - a.requests);
+
+    // Keep the raw provider as the storage identity, while exposing explicit
+    // local/remote/total Ali views for the dashboard and API filters.
+    const aliRecords = records.filter(record => record.provider === 'ali');
+    if (aliRecords.length > 0 && !queryParams.provider) {
+      result.byProvider = result.byProvider
+        .filter(entry => entry.provider !== 'ali')
+        .concat([
+          makeAliAlias('ali本机', aliRecords.filter(record => !record.source)),
+          makeAliAlias('ali远端', aliRecords.filter(record => record.source === 'home-local')),
+          makeAliAlias('ali总计', aliRecords),
+        ])
+        .sort((a, b) => b.requests - a.requests);
+    }
 
     result.byModel = Array.from(modelMap.values()).map(m => {
       const perf = calculatePerformance(m._perf);

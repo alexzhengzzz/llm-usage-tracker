@@ -1,5 +1,5 @@
-This fork contains the verified local runtime build in packages/cli/dist/cli.js.
-It includes the local/remote Ali alignment hook, provider aliases, quota aggregation,
-and dashboard default/provider UI customizations.
-The alignment helper is kept in tools/llm_usage_align.py and is installed at
-/Users/alex/.local/lib/llm-usage-aggregate/llm_usage_align.py for the local launchd runtime.
+This fork contains local/remote Ali usage alignment and quota monitoring.
+The source implementation is in packages/server/src, packages/ui/src, and
+tools/llm_usage_align.py. The CLI build copies the alignment helper into its
+own dist/tools directory so the packaged runtime does not depend on a user-
+specific absolute path.

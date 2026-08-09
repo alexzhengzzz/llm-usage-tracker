@@ -6,7 +6,7 @@
 export * from './types';
 
 // Export storage
-export { Storage, defaultStorage, append, appendAsync, listDailyFiles, query, count, cleanup, getProviders, getModels } from './storage';
+export { Storage, defaultStorage, append, appendAsync, listDailyFiles, query, count, cleanup, getProviders, getModels, providerMatches } from './storage';
 
 // Export aggregator
 export { Aggregator, defaultAggregator, aggregate, getTodaySummary, getAvailableDateRange, getDailyTotals, getPerformanceMetrics } from './aggregator';

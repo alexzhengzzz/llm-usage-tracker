@@ -7,6 +7,7 @@ import cors from '@fastify/cors';
 import staticPlugin from '@fastify/static';
 import path from 'node:path';
 import fs from 'node:fs';
+import { execFile } from 'node:child_process';
 import { config } from 'dotenv';
 import { Storage, Aggregator, LogReader, CodexLogReader } from '@llm-usage-tracker/core';
 import { createRoutes } from './routes';
@@ -33,6 +34,28 @@ export async function createServer(serverConfig: ServerConfig = {}) {
       level: process.env.LOG_LEVEL || 'info'
     }
   });
+
+  // Keep remote Ali data fresh in the background. Dashboard/API requests must
+  // remain responsive even when SSH is unavailable.
+  let alignmentInFlight = false;
+  const alignmentScript = [
+    process.env.LLM_USAGE_ALIGN_SCRIPT,
+    path.resolve(__dirname, 'tools', 'llm_usage_align.py'),
+    path.resolve(__dirname, '..', '..', 'tools', 'llm_usage_align.py'),
+    path.resolve(process.cwd(), 'tools', 'llm_usage_align.py'),
+  ].find(candidate => candidate && fs.existsSync(candidate));
+  const alignmentPython = process.env.LLM_USAGE_ALIGN_PYTHON || 'python3';
+  const alignRemoteUsage = () => {
+    if (!alignmentScript || alignmentInFlight) return;
+    alignmentInFlight = true;
+    execFile(alignmentPython, [alignmentScript], { timeout: 30000 }, error => {
+      alignmentInFlight = false;
+      if (error) fastify.log.warn({ err: error }, 'Remote usage alignment failed');
+    });
+  };
+  alignRemoteUsage();
+  const alignmentTimer = setInterval(alignRemoteUsage, 60000);
+  fastify.addHook('onClose', async () => clearInterval(alignmentTimer));
 
   // Register CORS
   await fastify.register(cors, {

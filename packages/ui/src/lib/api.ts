@@ -123,6 +123,25 @@ class ApiClient {
   async getPluginsStatus() {
     return { plugins: [] };
   }
+
+  async getAliQuota() {
+    return this.fetch<{
+      date: string;
+      provider: string;
+      used: number;
+      requests: number;
+      limit: number;
+      threshold: number;
+      remaining: number;
+      percent: number;
+      breaker: boolean;
+      blocked: boolean;
+    }>('/quota');
+  }
+
+  async toggleAliBreaker() {
+    return this.fetch<{ breaker: boolean }>('/quota/breaker/toggle', { method: 'POST' });
+  }
 }
 
 const apiClient = new ApiClient();
